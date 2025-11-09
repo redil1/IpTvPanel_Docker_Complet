@@ -1,3 +1,9 @@
+# Docker Compose for IPTV Panel
+#
+# This file orchestrates the deployment of the entire application stack,
+# including the panel, database, web server, and SSL certificate management.
+#
+
 services:
   # --- PostgreSQL Database Service ---
   db:
@@ -17,7 +23,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # --- Redis Cache ---
+  # --- Redis Cache Service ---
   redis:
     image: redis:7-alpine
     container_name: iptv_redis
@@ -29,7 +35,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # --- IPTV Panel Backend ---
+  # --- IPTV Panel Application Service ---
   panel:
     build:
       context: .
@@ -45,13 +51,12 @@ services:
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
       - REDIS_URL=redis://redis:6379/0
-
+      # Pass DB connection details to the entrypoint script
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - DB_NAME=${DB_NAME}
-
       - STREAM_DOMAIN=${STREAM_DOMAIN}
       - STREAM_SERVER_IP=${STREAM_SERVER_IP}
       - STREAMING_API_BASE_URL=${STREAMING_API_BASE_URL}
@@ -59,33 +64,51 @@ services:
       - STREAMING_API_TIMEOUT=${STREAMING_API_TIMEOUT:-10}
       - STREAMING_SERVER_USER=${STREAMING_SERVER_USER}
       - STREAMING_SERVER_PASS=${STREAMING_SERVER_PASS}
-
     restart: unless-stopped
     mem_limit: 1g
     volumes:
       - ./local_panel:/app
 
-  # --- Nginx (Internal Only) ---
+  # --- Nginx Reverse Proxy Service ---
   nginx:
     image: nginx:1.25-alpine
     container_name: iptv_nginx
     hostname: nginx
     depends_on:
       - panel
-
-    # ✅ IMPORTANT: REMOVE PORT MAPPING  
-    # Coolify will expose container:80 automatically
-
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
+      # Mount main nginx config and the app-specific config
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./docker/nginx/app.conf:/etc/nginx/templates/app.conf:ro
       - ./docker/nginx/envsubst-entrypoint.sh:/docker/nginx/envsubst-entrypoint.sh:ro
+      # Mount certbot volumes for SSL certs and challenges
+      - certbot_certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
     environment:
-      - PANEL_DOMAIN=${PANEL_DOMAIN}
+      - PANEL_DOMAIN=${PANEL_DOMAIN} # Pass domain to nginx config
     restart: unless-stopped
     entrypoint: /docker/nginx/envsubst-entrypoint.sh
 
+  # --- Certbot Service for SSL ---
+  certbot:
+    image: certbot/certbot
+    container_name: iptv_certbot
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    # The command will be run manually or via a cron job for renewal
+    command: >
+      certonly --webroot --webroot-path=/var/www/certbot
+      --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email
+      -d ${PANEL_DOMAIN} --force-renewal
+
 volumes:
   postgres_data:
+    driver: local
   certbot_certs:
+    driver: local
   certbot_webroot:
+    driver: local
