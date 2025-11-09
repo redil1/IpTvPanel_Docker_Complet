@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Map M3U Fields - IPTV Panel{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-diagram-3"></i> Map M3U Fields to Database</h2>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    <strong>Step 2 of 2:</strong> We detected <strong>{{ total_channels }}</strong> channels in your M3U file.
+    Map the M3U attributes to the correct database fields below, then confirm to import.
+</div>
+
+<div class="row">
+    <!-- Mapping Form -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-arrows-angle-contract"></i> Field Mapping</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('channels_import_confirm') }}">
+                    <!-- Source Name Input -->
+                    <div class="alert alert-primary">
+                        <h6><i class="bi bi-tag"></i> Name This M3U Source</h6>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text"
+                                    name="source_name"
+                                    id="sourceNameInput"
+                                    class="form-control"
+                                    placeholder="e.g., Premium Sports Pack, Provider A, BeIN Collection"
+                                    autocomplete="off"
+                                    required
+                                    maxlength="100">
+                                <small class="text-muted">This name will help you identify this source later</small>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" name="activate_now" id="activateNow" checked>
+                                    <label class="form-check-label" for="activateNow">
+                                        <strong>Activate immediately</strong>
+                                    </label>
+                                    <small class="d-block text-muted">Make this the active source</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-muted mb-3">
+                        Map each detected M3U attribute to a database field. Select <strong>"Ignore"</strong> for attributes you don't want to import.
+                    </p>
+
+                    {% if detected_attrs %}
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="40%">M3U Attribute</th>
+                                    <th width="60%">Maps to Database Field</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attr in detected_attrs %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ attr }}</span>
+                                    </td>
+                                    <td>
+                                        <select name="map_{{ attr }}" class="form-select form-select-sm">
+                                            <option value="ignore">-- Ignore --</option>
+                                            {% for db_field, description in db_fields.items() %}
+                                                <option value="{{ db_field }}"
+                                                    {% if default_mapping.get(attr) == db_field %}selected{% endif %}>
+                                                    {{ description }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No M3U attributes detected. The channels will use default values.
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-cloud-upload"></i> Confirm & Import {{ total_channels }} Channels
+                        </button>
+                        <a href="{{ url_for('channels_import') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                        <a href="{{ url_for('channels_list') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-eye"></i> Preview (First 5 Channels)</h5>
+            </div>
+            <div class="card-body">
+                {% if preview_channels %}
+                    {% for channel in preview_channels %}
+                        <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <h6 class="text-primary mb-2">{{ channel.name }}</h6>
+                            <small class="text-muted d-block mb-1">
+                                <i class="bi bi-link-45deg"></i> {{ channel.url[:60] }}{% if channel.url|length > 60 %}...{% endif %}
+                            </small>
+                            {% if channel.attributes %}
+                                <div class="mt-2">
+                                    {% for key, value in channel.attributes.items() %}
+                                        <span class="badge bg-light text-dark me-1 mb-1" style="font-size: 0.7rem;">
+                                            {{ key }}: {{ value[:20] }}{% if value|length > 20 %}...{% endif %}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    {% if total_channels > 5 %}
+                        <div class="text-center text-muted mt-3">
+                            <small><i class="bi bi-three-dots"></i> and {{ total_channels - 5 }} more channels</small>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">No preview available</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Database Field Reference -->
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Database Fields Reference</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0" style="font-size: 0.85rem;">
+                    <li><strong>Channel ID:</strong> Unique identifier (auto-generated if not mapped)</li>
+                    <li><strong>Channel Name:</strong> Display name (required)</li>
+                    <li><strong>Category:</strong> Group/category for organization</li>
+                    <li><strong>Source URL:</strong> Stream source (from M3U URL line)</li>
+                    <li><strong>Logo URL:</strong> Channel logo image</li>
+                    <li><strong>EPG ID:</strong> Electronic Program Guide ID</li>
+                    <li><strong>Quality:</strong> Stream quality setting</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-bordered td {
+    vertical-align: middle;
+}
+</style>
+
+<script>
+// Prevent Enter key from submitting form when typing in source name input
+document.addEventListener('DOMContentLoaded', function() {
+    const sourceNameInput = document.getElementById('sourceNameInput');
+
+    if (sourceNameInput) {
+        sourceNameInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                // Move focus to next field (activate checkbox) instead
+                document.getElementById('activateNow').focus();
+                return false;
+            }
+        });
+
+        // Auto-focus on the source name input when page loads
+        sourceNameInput.focus();
+    }
+});
+</script>
+
+{% endblock %}

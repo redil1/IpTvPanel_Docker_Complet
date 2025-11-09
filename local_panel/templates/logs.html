@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}System Logs - IPTV Panel{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-journal-text"></i> System Logs</h2>
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <select name="level" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Levels</option>
+                    <option value="INFO" {% if level == 'INFO' %}selected{% endif %}>INFO</option>
+                    <option value="WARNING" {% if level == 'WARNING' %}selected{% endif %}>WARNING</option>
+                    <option value="ERROR" {% if level == 'ERROR' %}selected{% endif %}>ERROR</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    <option value="AUTH" {% if category == 'AUTH' %}selected{% endif %}>AUTH</option>
+                    <option value="USER" {% if category == 'USER' %}selected{% endif %}>USER</option>
+                    <option value="CHANNEL" {% if category == 'CHANNEL' %}selected{% endif %}>CHANNEL</option>
+                    <option value="SYSTEM" {% if category == 'SYSTEM' %}selected{% endif %}>SYSTEM</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Level</th>
+                    <th>Category</th>
+                    <th>Message</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>
+                        {% if log.level == 'ERROR' %}
+                        <span class="badge bg-danger">{{ log.level }}</span>
+                        {% elif log.level == 'WARNING' %}
+                        <span class="badge bg-warning">{{ log.level }}</span>
+                        {% else %}
+                        <span class="badge bg-info">{{ log.level }}</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge bg-secondary">{{ log.category }}</span></td>
+                    <td>{{ log.message }}</td>
+                    <td><small>{{ log.ip_address or '-' }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if logs.pages > 1 %}
+        <nav>
+            <ul class="pagination">
+                {% if logs.has_prev %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('logs', page=logs.prev_num, level=level, category=category) }}">Previous</a></li>
+                {% endif %}
+                {% for page_num in logs.iter_pages(left_edge=1, right_edge=1) %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == logs.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('logs', page=page_num, level=level, category=category) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                {% if logs.has_next %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('logs', page=logs.next_num, level=level, category=category) }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

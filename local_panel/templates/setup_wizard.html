@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Initial Setup - IPTV Panel{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-sliders"></i> Initial Setup Wizard</h4>
+                <small>Step {{ step }} of 3</small>
+            </div>
+            <div class="card-body">
+                {% if step == 1 %}
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Server Name</label>
+                        <input type="text" class="form-control" name="server_name" value="{{ server_name }}" required>
+                        <small class="text-muted">Used across the panel (e.g., dashboard header).</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Time Zone</label>
+                        <input type="text" class="form-control" name="timezone" value="{{ timezone }}" placeholder="UTC">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Language</label>
+                        <input type="text" class="form-control" name="language" value="{{ language }}" placeholder="English">
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Continue</button>
+                    </div>
+                </form>
+                {% elif step == 2 %}
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Server Name</label>
+                            <input type="text" class="form-control" name="stream_server_name" value="{{ streaming_config.get('name', 'Hetzner-Stream-01') }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Server IP</label>
+                            <input type="text" class="form-control" name="stream_server_ip" value="{{ streaming_config.get('ip', '') }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Server Port</label>
+                            <input type="text" class="form-control" name="stream_server_port" value="{{ streaming_config.get('port', '80') }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Server Type</label>
+                            <input type="text" class="form-control" name="stream_server_type" value="{{ streaming_config.get('type', 'Load Balancer') }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Protocol</label>
+                            <input type="text" class="form-control" name="stream_server_protocol" value="{{ streaming_config.get('protocol', 'HTTP') }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="stream_server_status">
+                            {% set status = streaming_config.get('status', 'Active') %}
+                            <option value="Active" {% if status == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Maintenance" {% if status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                            <option value="Disabled" {% if status == 'Disabled' %}selected{% endif %}>Disabled</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('setup_wizard', step=1) }}" class="btn btn-secondary">Back</a>
+                        <button type="submit" class="btn btn-primary">Continue</button>
+                    </div>
+                </form>
+                {% elif step == 3 %}
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">M3U URL Format</label>
+                        <input type="text" class="form-control" name="m3u_url_format" value="{{ m3u_url_format }}" required>
+                        <small class="text-muted">Use placeholders {CHANNEL_ID} and {TOKEN}. Example: http://stream.myiptv.com/live/stream_{CHANNEL_ID}.m3u8?token={TOKEN}</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Token Type</label>
+                            <select class="form-select" name="token_type">
+                                <option value="user" {% if token_type == 'user' %}selected{% endif %}>User Token</option>
+                                <option value="channel" {% if token_type == 'channel' %}selected{% endif %}>Channel Token</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Token Length (characters)</label>
+                            <input type="number" class="form-control" name="token_length" value="{{ token_length }}" min="16" step="2">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('setup_wizard', step=2) }}" class="btn btn-secondary">Back</a>
+                        <button type="submit" class="btn btn-success">Finish &amp; Launch Panel</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

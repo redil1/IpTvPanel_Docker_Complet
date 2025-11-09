@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}{{ source.name }} - M3U Sources{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('m3u_sources_list') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Sources
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header {% if source.is_active %}bg-success text-white{% else %}bg-secondary text-white{% endif %}">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                {% if source.is_active %}
+                    <i class="bi bi-check-circle-fill"></i>
+                {% else %}
+                    <i class="bi bi-circle"></i>
+                {% endif %}
+                {{ source.name }}
+            </h4>
+            <span class="badge {% if source.is_active %}bg-light text-success{% else %}bg-dark{% endif %} fs-6">
+                {% if source.is_active %}ACTIVE SOURCE{% else %}Inactive{% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <small class="text-muted">Total Channels</small>
+                <h3>{{ source.total_channels }}</h3>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">Uploaded</small>
+                <p>{{ source.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+            <div class="col-md-6">
+                <small class="text-muted">Actions</small>
+                <div class="d-flex gap-2">
+                    {% if source.is_active %}
+                        <form method="POST" action="{{ url_for('m3u_source_deactivate', source_id=source.id) }}">
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Deactivate this source?')">
+                                <i class="bi bi-pause-circle"></i> Deactivate
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('m3u_source_activate', source_id=source.id) }}">
+                            <button type="submit" class="btn btn-success" onclick="return confirm('Activate {{ source.name }}?')">
+                                <i class="bi bi-play-circle"></i> Activate
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('m3u_source_delete', source_id=source.id) }}">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this source and all channels?')">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if detected_attrs %}
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Detected M3U Attributes</h6>
+                <div class="d-flex flex-wrap gap-1">
+                    {% for attr in detected_attrs %}
+                        <span class="badge bg-info">{{ attr }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Field Mapping Used</h6>
+                <small class="text-muted">
+                    {% if field_mapping %}
+                        {% for m3u_field, db_field in field_mapping.items() %}
+                            <span class="badge bg-secondary">{{ m3u_field }} → {{ db_field }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <em>Default mapping</em>
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-tv"></i> Channels ({{ source.total_channels }})</h5>
+    </div>
+    <div class="card-body">
+        {% if channels.items %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Channel ID</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Quality</th>
+                            <th>EPG ID</th>
+                            <th>Logo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for channel in channels.items %}
+                        <tr>
+                            <td><code>{{ channel.channel_id }}</code></td>
+                            <td>{{ channel.name }}</td>
+                            <td><span class="badge bg-primary">{{ channel.category }}</span></td>
+                            <td>{{ channel.quality }}</td>
+                            <td><small class="text-muted">{{ channel.epg_id or '-' }}</small></td>
+                            <td>
+                                {% if channel.logo_url %}
+                                    <img src="{{ channel.logo_url }}" alt="Logo" style="max-height: 30px;">
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if channels.pages > 1 %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% if channels.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('m3u_source_view', source_id=source.id, page=channels.prev_num) }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    {% for page_num in channels.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == channels.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('m3u_source_view', source_id=source.id, page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if channels.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('m3u_source_view', source_id=source.id, page=channels.next_num) }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <p class="text-muted">No channels found in this source.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Settings - IPTV Panel{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-gear"></i> System Settings</h2>
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Streaming Server Domain</label>
+                <input type="text" name="stream_domain" class="form-control" 
+                       value="{{ Settings.get('stream_domain', 'stream.yourdomain.com') }}">
+                <small class="text-muted">Domain where streams are served</small>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Streaming Server IP</label>
+                <input type="text" name="stream_server_ip" class="form-control" 
+                       value="{{ Settings.get('stream_server_ip', '0.0.0.0') }}">
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Default Subscription Days</label>
+                        <input type="number" name="default_expiry_days" class="form-control" 
+                               value="{{ Settings.get('default_expiry_days', '30') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Default Max Connections</label>
+                        <input type="number" name="default_max_connections" class="form-control" 
+                               value="{{ Settings.get('default_max_connections', '2') }}">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Save Settings
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

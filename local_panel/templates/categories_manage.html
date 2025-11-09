@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Category Management{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">Category Management</h2>
+        <p class="text-muted mb-0">Choose which channel categories appear in generated M3U playlists.</p>
+    </div>
+    <div class="ms-auto text-end">
+        <small class="text-muted">Total categories: {{ total_categories }}</small>
+    </div>
+</div>
+
+<form method="post" id="categoryForm">
+    <input type="hidden" name="selected_categories" id="selected_categories_input">
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header bg-light fw-semibold">Available Categories</div>
+                <div class="card-body">
+                    <p class="text-muted small">These categories exist on the streaming server but are not included in the playlist.</p>
+                    <input type="text" class="form-control form-control-sm mb-2" placeholder="Search..." id="available_search" autocomplete="off">
+                    <select multiple size="16" class="form-select" id="available_list">
+                        {% for category in available_categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 d-flex flex-column justify-content-center align-items-center gap-3">
+            <button type="button" class="btn btn-outline-primary w-100" id="btnMoveRight">
+                <i class="bi bi-arrow-right-circle"></i> Add
+            </button>
+            <button type="button" class="btn btn-outline-secondary w-100" id="btnMoveLeft">
+                <i class="bi bi-arrow-left-circle"></i> Remove
+            </button>
+            <button type="button" class="btn btn-outline-dark w-100" id="btnClear">
+                <i class="bi bi-backspace-reverse"></i> Clear
+            </button>
+        </div>
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header bg-light fw-semibold">Selected Categories</div>
+                <div class="card-body">
+                    <p class="text-muted small">Only channels within these categories will appear in downloaded playlists.</p>
+                    <input type="text" class="form-control form-control-sm mb-2" placeholder="Search..." id="selected_search" autocomplete="off">
+                    <select multiple size="16" class="form-select" id="selected_list">
+                        {% for category in selected_categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-end mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Save Selection
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const available = document.getElementById('available_list');
+    const selected = document.getElementById('selected_list');
+    const hiddenInput = document.getElementById('selected_categories_input');
+    const form = document.getElementById('categoryForm');
+    const availableSearch = document.getElementById('available_search');
+    const selectedSearch = document.getElementById('selected_search');
+
+    function move(from, to) {
+        Array.from(from.selectedOptions).forEach(option => {
+            option.selected = false;
+            to.appendChild(option);
+        });
+    }
+
+    function filterList(list, term) {
+        const normalized = term.trim().toLowerCase();
+        Array.from(list.options).forEach(option => {
+            const matches = !normalized || option.value.toLowerCase().includes(normalized);
+            option.hidden = !matches;
+        });
+    }
+
+    document.getElementById('btnMoveRight').addEventListener('click', () => move(available, selected));
+    document.getElementById('btnMoveLeft').addEventListener('click', () => move(selected, available));
+    document.getElementById('btnClear').addEventListener('click', () => {
+        Array.from(selected.options).forEach(option => available.appendChild(option));
+    });
+
+    availableSearch.addEventListener('input', event => filterList(available, event.target.value));
+    selectedSearch.addEventListener('input', event => filterList(selected, event.target.value));
+
+    form.addEventListener('submit', () => {
+        const values = Array.from(selected.options).map(option => option.value);
+        hiddenInput.value = JSON.stringify(values);
+    });
+})();
+</script>
+{% endblock %}

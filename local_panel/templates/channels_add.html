@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Add Channel - IPTV Panel{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-tv"></i> Add New Channel</h2>
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Channel ID *</label>
+                        <input type="text" name="channel_id" class="form-control" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Channel Name *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category" class="form-control" value="General">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Quality</label>
+                        <select name="quality" class="form-select">
+                            <option value="low">Low (1 Mbps)</option>
+                            <option value="medium" selected>Medium (1.5 Mbps)</option>
+                            <option value="high">High (2.5 Mbps)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Source URL *</label>
+                <input type="url" name="source_url" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Logo URL</label>
+                <input type="url" name="logo_url" class="form-control">
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Add Channel
+                </button>
+                <a href="{{ url_for('channels_list') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
